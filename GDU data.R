@@ -723,6 +723,38 @@ nam<-c("P1.2017.water.4","P1.2018.water.4","P2.2017.water.4","P2.2018.water.4",
                               "P6.2018.water.4","P7.2016.water.4","P7.2017.water.4","P7.2018.water.4")
 colnames(feature_water.4)<-c("start1","max/min1","end1","start2","max/min2","end2","start3","max/min3","end3","start4","max/min4","end4")
 row.names(feature_water.4)<-nam[-(which(lapply(x, function(x) mean(x[,9]))==0 | lapply(x, function(x) max(x[,7]))<=850))]
+                                                                     
+                                                                                       
+##############################################           Full ##########################################
+features<-rbind(feature_rain,
+feature_water.1,
+feature_water.2,
+feature_water.3,
+feature_water.4)
+
+yield<-c(yield_rain,
+         yield_water.1,
+         yield_water.2,
+         yield_water.3,
+         yield_water.4)
+wat<-(1*(endsWith(row.names(features),"water.1") | endsWith(row.names(features),"water.1.1"))+2*(endsWith(row.names(features),"water.2") | endsWith(row.names(features),"water.2.1"))+3*(endsWith(row.names(features),"water.3") | endsWith(row.names(features),"water.3.1"))+4*(endsWith(row.names(features),"water.4") + endsWith(row.names(features),"water.4.1")))
+wat<-as.factor(wat)
+features<-data.frame(scale(features),wat)
+#write.csv(file = "features1.csv",features)
+features_m<- model.matrix( ~ ., features)
+
+l<-dim(features_m)[1]
+sa<-sample(c(TRUE,FALSE),l,prob = c(0.7,0.3),re=T)
+fit1=cv.glmnet(features_m[sa,],yield[sa],alpha = 0,intercept = T,grouped = F)
+plot(fit1)
+
+fit2=glmnet(features_m[sa,],yield[sa],alpha = 0,intercept = T)
+
+plot(fit2, xvar = "lambda",label =T) # betas for lambdas
+predict(fit1, newx = features_m[!sa,], s = "lambda.min")
+cbind(predict(fit1, newx = features_m[!sa,], s = "lambda.min"),yield[!sa])
+
+
 ####################################### Rainfed seperately ####################################
 #feature_rain<-data.frame(scale(feature_rain))
 features_m.rain<- model.matrix( ~ ., feature_rain)
@@ -735,9 +767,8 @@ fit2=glmnet(features_m.rain[sa,],yield_rain[sa],alpha = 0,intercept = T)
 
 plot(fit2, xvar = "lambda",label =T) # betas for lambdas
 predict(fit1, newx = features_m.rain[!sa,], s = "lambda.min")
-#coef(fit2)
-
-
 
 cbind(predict(fit1, newx = features_m.rain[!sa,], s = "lambda.min")
       ,yield_rain[!sa])
+
+
