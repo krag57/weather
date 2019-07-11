@@ -723,3 +723,25 @@ nam<-c("P1.2017.water.4","P1.2018.water.4","P2.2017.water.4","P2.2018.water.4",
                               "P6.2018.water.4","P7.2016.water.4","P7.2017.water.4","P7.2018.water.4")
 colnames(feature_water.4)<-c("start1","max/min1","end1","start2","max/min2","end2","start3","max/min3","end3","start4","max/min4","end4")
 row.names(feature_water.4)<-nam[-(which(lapply(x, function(x) mean(x[,9]))==0 | lapply(x, function(x) max(x[,7]))<=850))]
+                                                                                       
+####################################    Elastic Net     ###################################################
+                                                                                       
+####################################### Rainfed seperately ####################################
+#feature_rain<-data.frame(scale(feature_rain))
+features_m.rain<- model.matrix( ~ ., feature_rain)
+l<-dim(features_m.rain)[1]
+sa<-sample(c(TRUE,FALSE),l,prob = c(0.7,0.3),re=T)
+fit1=cv.glmnet(features_m.rain[sa,],yield_rain[sa],alpha = 0.5,intercept = T,grouped = F)
+plot(fit1)
+coef(fit1,s = "lambda.min")
+
+
+fit2=glmnet(features_m.rain[sa,],yield_rain[sa],alpha = 0.5,intercept = T)
+
+plot(fit2, xvar = "lambda",label =T) # betas for lambdas
+predict(fit1, newx = features_m.rain[!sa,], s = "lambda.min")
+
+
+cbind(predict(fit1, newx = features_m.rain[!sa,], s = "lambda.min")
+      ,yield_rain[!sa])
+
