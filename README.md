@@ -1,2 +1,2 @@
 # weather
-project on weather pattern of Lubbock
+ predicting the regional cotton plant date for maximum yield based on functional data analysis
